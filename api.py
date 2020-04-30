@@ -15,9 +15,7 @@ app = Flask(__name__)
 api = Api(app)
 
 # parser = reqparse.RequestParser()
-# parser.add_argument('load')
-# parser.add_argument('fuels')
-# parser.add_argument('powerplants')
+# parser.add_argument('aaa', required=True)
 
 
 class PowerplantCodingChallenge(Resource):
@@ -25,6 +23,15 @@ class PowerplantCodingChallenge(Resource):
         # try:
         data = request.get_json()
         dispatcher = PowerDispatcher(data)
+        if not dispatcher.errors and not dispatcher.missing_params:
+            pass
+        else:
+            if dispatcher.missing_params:
+                msg = 'The following parameters are required in the JSON body or the query string: `{}`.'\
+                      .format('`, `'.join(dispatcher.missing_params))
+                dispatcher.errors.insert(0, msg)
+            return {'errors': dispatcher.errors}, 400
+
         # except Exception as e:
         #     print(e)
         return {'hello': 'world'}
