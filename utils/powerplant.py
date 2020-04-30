@@ -1,5 +1,3 @@
-import logging
-
 from flask import Flask
 
 
@@ -10,3 +8,11 @@ class Powerplant:
 
     def __init__(self):
         pass
+
+    ##################
+    # Public Methods #
+    ##################
+
+    ###################
+    # Private Methods #
+    ###################
