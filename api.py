@@ -15,9 +15,6 @@ api = Api(app)
 
 class PowerplantCodingChallenge(Resource):
     def get(self):
-        app.logger.debug('test')
-        app.logger.info('test2')
-        app.logger.warning('test3')
         return {'hello': 'world'}
 
 
