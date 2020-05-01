@@ -1,6 +1,5 @@
 from api import app
-
-from .powerplant import Powerplant
+from api.powerplant import Powerplant
 
 
 MIN_PERCENT = 0
@@ -98,9 +97,9 @@ class PowerAllocator:
                 if fuel_param == 'wind(%)' and (not isinstance(value, (int, float))
                                                 or value < MIN_PERCENT
                                                 or value > MAX_PERCENT):
-                    error = f'The `fuel.wind(%)` value must be a number between {MIN_PERCENT} and {MAX_PERCENT}.'
+                    error = f'The `fuels.wind(%)` value must be a number between {MIN_PERCENT} and {MAX_PERCENT}.'
                 elif not isinstance(value, (int, float)) or value < 0:
-                    error = f'The `fuel.{fuel_param}` value must be a positive number.'
+                    error = f'The `fuels.{fuel_param}` value must be a positive number.'
                 if error:
                     app.logger.error(error)
                     self.errors.append(error)
@@ -173,9 +172,7 @@ class PowerAllocator:
                                                            or value < MIN_EFFICIENCY
                                                            or value > MAX_EFFICIENCY):
                     error = f'The `powerplants.efficiency` value must be a number between {MIN_EFFICIENCY} and '\
-                            f'{MIN_EFFICIENCY}.'
-                    app.logger.error(error)
-                    self.errors.append(error)
+                            f'{MAX_EFFICIENCY}.'
                 elif (powerplant_param == 'pmin' or powerplant_param == 'pmax') and (not isinstance(value, (int, float))
                                                                                      or value < 0):
                     error = f'The `powerplants.{powerplant_param}` value has to be a positive number.'

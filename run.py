@@ -13,11 +13,19 @@ LOGGING_FILE = os.path.join(BASE_DIR, 'powerplant-coding-challenge.log')
 
 
 if __name__ == '__main__':
-    handler = logging.handlers.RotatingFileHandler(LOGGING_FILE, maxBytes=8096, backupCount=1)
-    formatter = logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
+    # app logger config
+    handler = logging.handlers.RotatingFileHandler(LOGGING_FILE, maxBytes=65536, backupCount=1)
+    formatter = logging.Formatter(fmt="[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+                                  datefmt='%Y-%m-%d %H:%M:%S')
     handler.setFormatter(formatter)
     handler.setLevel(logging.INFO)
     app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+
+    # log messages emitted by Werkzeug will also be saved in the file
+    internal_logger = logging.getLogger('werkzeug')
+    internal_logger.setLevel(logging.INFO)
+    internal_logger.addHandler(handler)
 
     api = Api(app)
     api.add_resource(PowerplantCodingChallenge, '/', '/api')

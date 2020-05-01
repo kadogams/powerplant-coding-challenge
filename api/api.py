@@ -1,9 +1,9 @@
 from api import app
+from api.power_allocator import PowerAllocator
 
 from flask import Flask, request
 from flask_restful import Api, Resource
 
-from .power_allocator import PowerAllocator
 
 
 class PowerplantCodingChallenge(Resource):
