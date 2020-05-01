@@ -12,7 +12,9 @@ POWERPLANT_PARAMS = ['name', 'type', 'efficiency', 'pmin', 'pmax']
 POWERPLANT_TYPES = ['gasfired', 'turbojet', 'windturbine']
 
 
-class PowerDispatcher:
+class PowerAllocator:
+    """A class that allows to parse the payload and allocate resources accordingly.
+    """
 
     def __init__(self, data):
         """The class will initialized with the following attributes:
@@ -35,18 +37,41 @@ class PowerDispatcher:
         self.missing_params = []
         self.load = self._parse_load(data)
         self.gas_price, self.kerosine_price, self.co2_price, self.wind = self._parse_fuels(data)
-        self.power_plants = self._parse_powerplants(data)
+        self.powerplants = self._parse_powerplants(data)
 
     ##################
     # Public Methods #
     ##################
 
     def run(self):
-        pass
+        """Allocate power resources across the powerplants and return a list with the result.
+
+        Returns
+        -------
+        list
+            A list of dict containing the name and the power delivered by each powerplant.
+        """
+        if self.errors or self.missing_params:
+            error = 'An error occurred during the parsing of the payload, the resources cannot be allocated.'
+            app.logger.error(error)
+
+        self._get_real_costs()
 
     ###################
     # Private Methods #
     ###################
+
+    def _get_real_costs(self):
+        """Get the cost to generate 1MWh of electricity for every powerplant and store the value in their `real_cost`
+        attribute.
+        """
+        for powerplant in self.powerplants:
+            if powerplant.type == 'gasfired':
+                powerplant.real_cost = self.gas_price / powerplant.efficiency
+            elif powerplant.type == 'turbojet':
+                powerplant.real_cost = self.kerosine_price / powerplant.efficiency
+            elif powerplant.type == 'windturbine':
+                powerplant.real_cost = 0
 
     def _parse_fuels(self, data):
         """Parse the fuel values of the HTTP request payload.
@@ -175,6 +200,10 @@ class PowerDispatcher:
                 error = 'The names of the powerplants must be unique.'
                 app.logger.error(error)
                 self.errors.append(error)
-                return []
+            # check if pmin is higher than pmax
+            if pmin > pmax:
+                error = f"The `pmin` value of powerplant '{name}' is higher than `pmax`."
+                app.logger.error(error)
+                self.errors.append(error)
             objects[name] = Powerplant(name, type_, efficiency, pmin, pmax)
         return objects.values()

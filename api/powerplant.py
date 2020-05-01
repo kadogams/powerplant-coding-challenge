@@ -2,6 +2,9 @@ from api import app
 
 
 class Powerplant:
+    """A class that allows to store the powerplants' information.
+
+    """
 
     def __init__(self, name, type_, efficiency, pmin, pmax):
         """
@@ -25,6 +28,8 @@ class Powerplant:
         self.efficiency = efficiency
         self.pmin = pmin
         self.pmax = pmax
+        # cost to generate 1MWh of electricity
+        self.real_cost = -1
 
     ##################
     # Public Methods #
@@ -33,3 +38,4 @@ class Powerplant:
     ###################
     # Private Methods #
     ###################
+

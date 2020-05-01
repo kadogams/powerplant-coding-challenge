@@ -23,3 +23,5 @@ if __name__ == '__main__':
     api.add_resource(PowerplantCodingChallenge, '/', '/api')
 
     app.run(debug=True)
+
+# TODO README.md + requirements.txt
