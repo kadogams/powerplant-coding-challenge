@@ -1,0 +1,80 @@
+# A proposal for the powerplant-coding-challenge
+
+A proposal to the challenge offered by the SPaaS team of ENGIE/GEM.
+
+The REST API has been developed in Python using Flask framework, and a Dockerfile has been added for the extra challenge.
+
+A few notes concerning the challenge:
+
+- different powerplants may have the same name (cf. `example_response.json`)
+- the *ALLOW_FLOAT* flag in `api/settings.py` can be set to *False* if you prefer to have integer values in your responses (assuming that the pmin and pmax values in the payload are whole numbers)
+
+## Requirements
+
+- Docker
+- or Python3 if ran with the local interpreter
+
+P.S. The following content has been written for an Unix environment.
+
+## Installation
+
+### Via Docker
+
+Build the Docker image from the Dockerfile by running:
+
+```bash
+docker build -t powerplant-coding-challenge .
+```
+
+Run the container:
+
+```bash
+docker run -d -p 5000:5000 powerplant-coding-challenge
+```
+
+The API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
+
+If you would like to access the app's logs locally, the following command will run the container and create a directory called `log` in your current directory and bindmount it to `/var/log/uwsgi`in the container.
+
+```bash
+docker run -d -p 5000:5000 -v ${PWD}/log:/var/log/uwsgi powerplant-coding-challenge
+```
+
+### Via the local interpreter
+
+Assuming that you are in a Python3 virtual environment, install the required dependencies with the following command:
+
+```bash
+pip install -r requirements.txt
+```
+Run the app:
+
+```bash
+python run.py
+```
+
+Or via the following command:
+
+```bash
+FLASK_APP=run.py FLASK_ENV=development flask run
+```
+
+The API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
+
+## Usage
+
+You may run the following cURL command to make a HTTP GET request with one of the payload examples provided:
+
+```bash
+curl -X GET http://127.0.0.1:5000/api/v0 --data "@resource/example_payloads/payload1.json" --header "Content-Type: application/json"
+```
+
+You should receive a JSON format with the allocated power for the given payload.
+
+For more information about the required payload please refer to the challenge resource.
+
+## Author
+
+Shoei Kadogami, consultant at Intys Data  
+telephone: +32 487 59 42 58  
+email: shoei.kadogami@intys.eu
