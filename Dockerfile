@@ -1,14 +1,16 @@
 # Docker "Official Image" for python
 FROM python:3.7-buster
 
+RUN apt update -y
+
 # set the working directory in the container
-WORKDIR /api
+WORKDIR /app
 
 # copy everything to WORKDIR
-ADD . /api
+ADD . /app
 
 # install the dependencies
 RUN pip install -r requirements.txt
 
 # start uWSGI
-CMD ["uwsgi", "app.ini"]
+CMD ["uwsgi", "api.ini"]
