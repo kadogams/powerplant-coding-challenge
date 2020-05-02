@@ -27,12 +27,3 @@ class Powerplant:
         self.pmax = pmax
         # cost to generate 1MWh of electricity
         self.real_cost = 0
-
-    ##################
-    # Public Methods #
-    ##################
-
-    ###################
-    # Private Methods #
-    ###################
-
