@@ -2,17 +2,19 @@
 
 A proposal to the challenge offered by the SPaaS team of ENGIE/GEM.
 
-The REST API has been developed in Python using Flask framework, and a Dockerfile has been added for the extra challenge.
+The REST API has been developed in Python using Flask framework, and a Dockerfile has been added for the extra
+challenge.
 
 A few notes concerning the challenge:
 
 - different powerplants may have the same name (cf. `example_response.json`)
-- the *ALLOW_FLOAT* flag in `api/settings.py` can be set to *False* if you prefer to have integer values in your responses (assuming that the pmin and pmax values in the payload are whole numbers)
+- the *ALLOW_FLOAT* flag in `api/settings.py` can be set to *False* if you prefer to have integer values in your
+responses (assuming that the pmin and pmax values in the payload are whole numbers)
 
 ## Requirements
 
 - Docker
-- or Python3 if ran with the local interpreter
+- or Python3 if run with the local interpreter
 
 P.S. The following content has been written for an Unix environment.
 
@@ -34,7 +36,8 @@ docker run -d -p 5000:5000 powerplant-coding-challenge
 
 The API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
 
-If you would like to access the app's logs locally, the following command will run the container and create a directory called `log` in your current directory and bindmount it to `/var/log/uwsgi`in the container.
+If you would like to access the app's logs locally, the following command will run the container and create a directory
+called `log` in your current directory and bindmount it to `/var/log/uwsgi`in the container.
 
 ```bash
 docker run -d -p 5000:5000 -v ${PWD}/log:/var/log/uwsgi powerplant-coding-challenge
@@ -66,10 +69,12 @@ The API should be exposed at <http://localhost:5000/> and <http://localhost:5000
 You may run the following cURL command to make a HTTP GET request with one of the payload examples provided:
 
 ```bash
-curl -X GET http://127.0.0.1:5000/api/v0 --data "@resource/example_payloads/payload1.json" --header "Content-Type: application/json"
+curl -X GET http://127.0.0.1:5000/api/v0\
+    --data "@resource/example_payloads/payload1.json"\
+    --header "Content-Type: application/json"
 ```
 
-You should receive a JSON format with the allocated power for the given payload.
+You should receive a JSON format response with the allocated power for the given payload.
 
 For more information about the required payload please refer to the challenge resource.
 
