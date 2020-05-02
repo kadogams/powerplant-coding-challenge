@@ -10,6 +10,8 @@ A few notes concerning the challenge:
 - different powerplants may have the same name (cf. `example_response.json`)
 - the *ALLOW_FLOAT* flag in `api/settings.py` can be set to *False* if you prefer to have integer values in your
 responses (assuming that the pmin and pmax values in the payload are whole numbers)
+- if run with your local interpreter, the log outputs will be sent to stderr, and if run with Docker the logs will be
+saved at `/var/log/uwsgi` in the container.
 
 ## Requirements
 
@@ -33,8 +35,6 @@ Run the container:
 ```bash
 docker run -d -p 5000:5000 powerplant-coding-challenge
 ```
-
-The API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
 
 If you would like to access the app's logs locally, the following command will run the container and create a directory
 called `log` in your current directory and bindmount it to `/var/log/uwsgi`in the container.
@@ -62,9 +62,9 @@ Or via the following command:
 FLASK_APP=run.py FLASK_ENV=development flask run
 ```
 
-The API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
-
 ## Usage
+
+Once the installation complete, the API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
 
 You may run the following cURL command to make a HTTP GET request with one of the payload examples provided:
 
