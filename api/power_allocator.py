@@ -1,14 +1,8 @@
 from api import app
+from api.settings import *
 from api.powerplant import Powerplant
 
-
-MIN_PERCENT = 0
-MAX_PERCENT = 100
-MIN_EFFICIENCY = 0
-MAX_EFFICIENCY = 1
-FUEL_PARAMS = ['gas(euro/MWh)', 'kerosine(euro/MWh)', 'co2(euro/ton)', 'wind(%)']
-POWERPLANT_PARAMS = ['name', 'type', 'efficiency', 'pmin', 'pmax']
-POWERPLANT_TYPES = ['gasfired', 'turbojet', 'windturbine']
+import copy
 
 
 class PowerAllocator:
@@ -22,7 +16,7 @@ class PowerAllocator:
           50% (i.e. 2 units of gas will generate one unit of electricity), the cost of generating 1 MWh is 12 euro.
         - kerosine_price: the price of kerosine per MWh.
         - co2_price: the price of emission allowances (optionally to be taken into account).
-        - wind: percentage of wind. Example: if there is on average 25% wind during an hour, a wind-turbine with a Pmax
+        - wind_percent: percentage of wind. Example: if there is on average 25% wind during an hour, a wind-turbine with a Pmax
           of 4 MW will generate 1MWh of energy.
         - powerplants: a list of Powerplant objects.
 
@@ -35,7 +29,7 @@ class PowerAllocator:
         self.errors = []
         self.missing_params = []
         self.load = self._parse_load(data)
-        self.gas_price, self.kerosine_price, self.co2_price, self.wind = self._parse_fuels(data)
+        self.gas_price, self.kerosine_price, self.co2_price, self.wind_percent = self._parse_fuels(data)
         self.powerplants = self._parse_powerplants(data)
 
     ##################
@@ -54,11 +48,113 @@ class PowerAllocator:
             error = 'An error occurred during the parsing of the payload, the resources cannot be allocated.'
             app.logger.error(error)
 
+        # get the costs to generate 1MWh of electricity.
         self._get_real_costs()
+        # sort powerplants by their real_cost (ascending order).
+        self.powerplants.sort(key=lambda x: x.real_cost)
+
+        return self._allocate_power()
 
     ###################
     # Private Methods #
     ###################
+
+    def _allocate_power(self):
+        """Allocate power resources across the powerplants.
+
+        A queuing system with dicts containing a snapshot of the power allocation will be used:
+        - powers: list of allocated power, the index corresponding to the index of self.powerplants
+        - costs: list of generated costs from the allocation, the index corresponding to the index of self.powerplants
+        - curr_index: index of the powerplant to be allocated during in the queuing process
+
+        Returns
+        -------
+        list
+            A list of dict containing the name and the power delivered by each powerplant.
+        """
+        # number of powerplants
+        size = len(self.powerplants)
+
+        # power allocation snapshot
+        allocation = {
+            'powers': [0] * size,
+            'costs': [0] * size,
+            'curr_index': 0
+        }
+
+        def _reallocate(allocation, new_power, new_index):
+            """Update and return a new allocation snapshot.
+            """
+            index = allocation['curr_index']
+            new_allocation = copy.deepcopy(allocation)
+            new_allocation['powers'][index] = new_power
+            new_allocation['costs'][index] = new_power * self.powerplants[index].real_cost
+            new_allocation['curr_index'] = new_index
+            return new_allocation
+
+        fully_allocated = None
+        queue = [allocation]
+        while queue:
+            allocation = queue.pop(0)
+            index = allocation['curr_index']
+            total_power = sum(allocation['powers'])
+            remaining_load = self.load - total_power
+
+            if remaining_load == 0:  # power allocated correctly
+                total_cost = sum(allocation['costs'])
+                # replace the current fully_allocated object if the new one is more cost efficient
+                if not fully_allocated or fully_allocated['total_cost'] > total_cost:
+                    fully_allocated = allocation
+                    fully_allocated['total_cost'] = total_cost
+                continue
+            elif not 0 <= index < size:  # ignore if current index is out of reach
+                continue
+
+            # power limits of the current powerplant
+            curr_pmin = self.powerplants[index].pmin
+            curr_pmax = self.powerplants[index].pmax
+
+            if remaining_load > 0:  # under power
+                if remaining_load >= curr_pmax:
+                    power = curr_pmax
+                elif remaining_load >= curr_pmin:
+                    power = remaining_load
+                else:  # required power lower than the current powerplant's pmin
+                    power = 0
+                    # add a different scenario to the queue
+                    new_allocation = _reallocate(allocation=allocation, new_power=curr_pmin, new_index=index - 1)
+                    queue.append(new_allocation)
+                new_allocation = _reallocate(allocation=allocation, new_power=power, new_index=index + 1)
+                queue.append(new_allocation)
+
+            else:  # over power
+                excess_load = abs(remaining_load)
+                curr_power = allocation['powers'][index]
+                if excess_load >= curr_pmax:
+                    power = 0
+                elif curr_power - excess_load >= curr_pmin:
+                    power = curr_power - excess_load
+                else:  # required power lower than the current powerplant's pmin
+                    power = 0
+                    if curr_pmin != 0:
+                        # add a different scenario to the queue
+                        new_allocation = _reallocate(allocation=allocation, new_power=curr_pmin, new_index=index - 1)
+                        queue.append(new_allocation)
+                new_allocation = _reallocate(allocation=allocation, new_power=power, new_index=index - 1)
+                queue.append(new_allocation)
+
+        results = []
+        if not fully_allocated:
+            error = 'Power could not be allocated correctly, please verify the payload.'
+            app.logger.error(error)
+            self.errors.append(error)
+        else:
+            for i, powerplant in enumerate(self.powerplants):
+                results.append({
+                    'name': powerplant.name,
+                    'p': fully_allocated['powers'][i]
+                })
+        return results
 
     def _get_real_costs(self):
         """Get the cost to generate 1MWh of electricity for every powerplant and store the value in their `real_cost`
@@ -71,6 +167,11 @@ class PowerAllocator:
                 powerplant.real_cost = self.kerosine_price / powerplant.efficiency
             elif powerplant.type == 'windturbine':
                 powerplant.real_cost = 0
+                # adjust the pmax of windturbines according to the percentage of wind
+                powerplant.pmax = powerplant.pmax * self.wind_percent / 100
+                # convert to int if the ALLOW_FLOAT flag is active or if it is a whole number
+                if not ALLOW_FLOAT or powerplant.pmax.is_integer():
+                    powerplant.pmax = int(powerplant.pmax)
 
     def _parse_fuels(self, data):
         """Parse the fuel values of the HTTP request payload.
@@ -112,8 +213,8 @@ class PowerAllocator:
         gas_price = _check_fuel_param(fuels, FUEL_PARAMS[0])
         kerosine_price = _check_fuel_param(fuels, FUEL_PARAMS[1])
         co2_price = _check_fuel_param(fuels, FUEL_PARAMS[2])
-        wind = _check_fuel_param(fuels, FUEL_PARAMS[3])
-        return gas_price, kerosine_price, co2_price, wind
+        wind_percent = _check_fuel_param(fuels, FUEL_PARAMS[3])
+        return gas_price, kerosine_price, co2_price, wind_percent
 
     def _parse_load(self, data):
         """Parse the load value of the HTTP request payload.
@@ -162,8 +263,6 @@ class PowerAllocator:
                 error = None
                 if powerplant_param == 'name' and not isinstance(value, str):
                     error = 'The `powerplants.name` value must be a string.'
-                    app.logger.error(error)
-                    self.errors.append(error)
                 elif powerplant_param == 'type' and value not in POWERPLANT_TYPES:
                     error = "Valid values for the powerplant types are '{}', "\
                             "the given value is invalid: '{}'"\
@@ -185,22 +284,27 @@ class PowerAllocator:
             return value
 
         powerplants = data['powerplants']
-        objects = {}
+        objects = []
         for powerplant in powerplants:
             name = _check_powerplant_param(powerplant, POWERPLANT_PARAMS[0])
             type_ = _check_powerplant_param(powerplant, POWERPLANT_PARAMS[1])
             efficiency = _check_powerplant_param(powerplant, POWERPLANT_PARAMS[2])
             pmin = _check_powerplant_param(powerplant, POWERPLANT_PARAMS[3])
             pmax = _check_powerplant_param(powerplant, POWERPLANT_PARAMS[4])
-            # check if the name is already used
-            if name in objects:
-                error = 'The names of the powerplants must be unique.'
-                app.logger.error(error)
-                self.errors.append(error)
+
+            # update: sharing the same name is allowed (cf. example_response.json)
+            # # check if the name is already used
+            # if name in [o.name for o in objects]:
+            #     error = f"The name of the powerplants must be unique: '{name}' is already used."
+            #     app.logger.error(error)
+            #     self.errors.append(error)
+
             # check if pmin is higher than pmax
             if pmin > pmax:
                 error = f"The `pmin` value of powerplant '{name}' is higher than `pmax`."
                 app.logger.error(error)
                 self.errors.append(error)
-            objects[name] = Powerplant(name, type_, efficiency, pmin, pmax)
-        return objects.values()
+            objects.append(
+                Powerplant(name, type_, efficiency, pmin, pmax)
+            )
+        return objects

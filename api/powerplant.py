@@ -1,6 +1,3 @@
-from api import app
-
-
 class Powerplant:
     """A class that allows to store the powerplants' information.
 
@@ -29,7 +26,7 @@ class Powerplant:
         self.pmin = pmin
         self.pmax = pmax
         # cost to generate 1MWh of electricity
-        self.real_cost = -1
+        self.real_cost = 0
 
     ##################
     # Public Methods #
