@@ -48,9 +48,10 @@ class PowerAllocator:
             error = 'An error occurred during the parsing of the payload, the resources cannot be allocated.'
             app.logger.error(error)
 
-        # get the costs to generate 1MWh of electricity.
+        # get the cost to generate 1MWh of electricity for each powerplant
         self._get_real_costs()
-        # sort powerplants by their real_cost (ascending order).
+
+        # sort powerplants by their real_cost (ascending order)
         self.powerplants.sort(key=lambda x: x.real_cost)
 
         return self._allocate_power()
@@ -63,8 +64,7 @@ class PowerAllocator:
         """Allocate power resources across the powerplants.
 
         A queuing system with dicts containing a snapshot of the power allocation will be used:
-        - powers: list of allocated power, the index corresponding to the index of self.powerplants
-        - costs: list of generated costs from the allocation, the index corresponding to the index of self.powerplants
+        - p_list: list of allocated power, the index corresponding to the index of self.powerplants
         - curr_index: index of the powerplant to be allocated during in the queuing process
 
         Returns
@@ -77,8 +77,7 @@ class PowerAllocator:
 
         # power allocation snapshot
         allocation = {
-            'powers': [0] * size,
-            'costs': [0] * size,
+            'p_list': [0] * size,
             'curr_index': 0
         }
 
@@ -87,21 +86,28 @@ class PowerAllocator:
             """
             index = allocation['curr_index']
             new_allocation = copy.deepcopy(allocation)
-            new_allocation['powers'][index] = new_power
-            new_allocation['costs'][index] = new_power * self.powerplants[index].real_cost
+            new_allocation['p_list'][index] = new_power
             new_allocation['curr_index'] = new_index
             return new_allocation
+
+        def _get_total_cost(allocation, size):
+            """Return the total cost of the current allocation.
+            """
+            total_cost = 0
+            for i in range(size):
+                total_cost += allocation['p_list'][i] * self.powerplants[i].real_cost
+            return total_cost
 
         fully_allocated = None
         queue = [allocation]
         while queue:
             allocation = queue.pop(0)
             index = allocation['curr_index']
-            total_power = sum(allocation['powers'])
+            total_power = sum(allocation['p_list'])
             remaining_load = self.load - total_power
 
             if remaining_load == 0:  # power allocated correctly
-                total_cost = sum(allocation['costs'])
+                total_cost = _get_total_cost(allocation, size)
                 # replace the current fully_allocated object if the new one is more cost efficient
                 if not fully_allocated or fully_allocated['total_cost'] > total_cost:
                     fully_allocated = allocation
@@ -129,7 +135,7 @@ class PowerAllocator:
 
             else:  # over power
                 excess_load = abs(remaining_load)
-                curr_power = allocation['powers'][index]
+                curr_power = allocation['p_list'][index]
                 if excess_load >= curr_pmax:
                     power = 0
                 elif curr_power - excess_load >= curr_pmin:
@@ -152,13 +158,13 @@ class PowerAllocator:
             for i, powerplant in enumerate(self.powerplants):
                 results.append({
                     'name': powerplant.name,
-                    'p': fully_allocated['powers'][i]
+                    'p': fully_allocated['p_list'][i]
                 })
         return results
 
     def _get_real_costs(self):
         """Get the cost to generate 1MWh of electricity for every powerplant and store the value in their `real_cost`
-        attribute.
+        attribute. The `pmax` value of the windturbine will be updated according to the wind percentage.
         """
         for powerplant in self.powerplants:
             if powerplant.type == 'gasfired':
