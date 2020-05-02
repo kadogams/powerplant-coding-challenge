@@ -18,4 +18,6 @@ FUEL_PARAMS = ['gas(euro/MWh)', 'kerosine(euro/MWh)', 'co2(euro/ton)', 'wind(%)'
 POWERPLANT_PARAMS = ['name', 'type', 'efficiency', 'pmin', 'pmax']
 POWERPLANT_TYPES = ['gasfired', 'turbojet', 'windturbine']
 
+# if set to false, the API responses will contain integer values (assuming that the pmin and pmax values in the payload
+# are whole numbers)
 ALLOW_FLOAT = True
