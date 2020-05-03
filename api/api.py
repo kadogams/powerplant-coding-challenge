@@ -2,7 +2,8 @@
 and that returns a json with the same structure as in `resource/example_response.json`.
 
 Power will be allocated using a queuing system in order to have a cost efficient repartition of power across the
-available powerplants.
+available powerplants. Power will be gradually allocated from the powerplant with the lowest cost to the one with the
+highest cost.
 
 For more information about the challenge please refer to the challenge resource.
 """
