@@ -249,7 +249,8 @@ fabric.properties
 
 # End of https://www.gitignore.io/api/flask,python,pycharm
 
-venv/
-resource/
+.idea
 .gitmodules
+resource/
+venv/
 log/
