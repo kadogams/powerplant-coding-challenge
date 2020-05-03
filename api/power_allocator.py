@@ -20,7 +20,6 @@ class PowerAllocator:
           of 4 MW will generate 1MWh of energy.
         - powerplants: a list of Powerplant objects.
 
-
         Parameters
         ----------
         data : json-like dict
@@ -51,7 +50,7 @@ class PowerAllocator:
         # get the cost to generate 1MWh of electricity for each powerplant
         self._get_real_costs()
 
-        # sort powerplants by their real_cost (ascending order)
+        # sort powerplants by their real_cost in ascending order
         self.powerplants.sort(key=lambda x: x.real_cost)
 
         return self._allocate_power()
@@ -65,7 +64,11 @@ class PowerAllocator:
 
         A queuing system with dicts containing a snapshot of the power allocation will be used:
         - p_list: list of allocated power, the index corresponding to the index of self.powerplants
-        - curr_index: index of the powerplant to be allocated during in the queuing process
+        - curr_index: index of the powerplant to be reallocated during in the queuing process
+
+        An empty allocation snapshot will be initialized, and power will be gradually allocated from the powerplant
+        with the lowest cost to the one with the highest cost (self.powerplants have been sorted by their `real_cost`
+        attribute in ascending order). The function iterates until no elements are found in the queue.
 
         Returns
         -------
@@ -75,7 +78,7 @@ class PowerAllocator:
         # number of powerplants
         size = len(self.powerplants)
 
-        # power allocation snapshot
+        # initialize an allocation snapshot
         allocation = {
             'p_list': [0] * size,
             'curr_index': 0
@@ -84,9 +87,9 @@ class PowerAllocator:
         def _reallocate(allocation, new_power, new_index):
             """Update and return a new allocation snapshot.
             """
-            index = allocation['curr_index']
+            curr_index = allocation['curr_index']
             new_allocation = copy.deepcopy(allocation)
-            new_allocation['p_list'][index] = new_power
+            new_allocation['p_list'][curr_index] = new_power
             new_allocation['curr_index'] = new_index
             return new_allocation
 
@@ -98,11 +101,14 @@ class PowerAllocator:
                 total_cost += allocation['p_list'][i] * self.powerplants[i].real_cost
             return total_cost
 
+        # once the target load reached, the allocation snapshot will be saved in this variable
         fully_allocated = None
         queue = [allocation]
         while queue:
+            # get the current snapshot from the queue
             allocation = queue.pop(0)
-            index = allocation['curr_index']
+
+            curr_index = allocation['curr_index']
             total_power = sum(allocation['p_list'])
             remaining_load = self.load - total_power
 
@@ -113,40 +119,42 @@ class PowerAllocator:
                     fully_allocated = allocation
                     fully_allocated['total_cost'] = total_cost
                 continue
-            elif not 0 <= index < size:  # ignore if current index is out of reach
+            elif not 0 <= curr_index < size:  # ignore queue element if current index is out of reach
                 continue
 
             # power limits of the current powerplant
-            curr_pmin = self.powerplants[index].pmin
-            curr_pmax = self.powerplants[index].pmax
+            curr_pmin = self.powerplants[curr_index].pmin
+            curr_pmax = self.powerplants[curr_index].pmax
 
             if remaining_load > 0:  # under power
                 if remaining_load >= curr_pmax:
-                    power = curr_pmax
+                    new_power = curr_pmax
                 elif remaining_load >= curr_pmin:
-                    power = remaining_load
+                    new_power = remaining_load
                 else:  # required power lower than the current powerplant's pmin
-                    power = 0
-                    # add a different scenario to the queue
-                    new_allocation = _reallocate(allocation=allocation, new_power=curr_pmin, new_index=index - 1)
+                    new_power = 0
+                    # add a different scenario to the queue: allocate pmin and try to decrease
+                    # the power of the previous index
+                    new_allocation = _reallocate(allocation=allocation, new_power=curr_pmin, new_index=curr_index - 1)
                     queue.append(new_allocation)
-                new_allocation = _reallocate(allocation=allocation, new_power=power, new_index=index + 1)
+                new_allocation = _reallocate(allocation=allocation, new_power=new_power, new_index=curr_index + 1)
                 queue.append(new_allocation)
 
             else:  # over power
                 excess_load = abs(remaining_load)
-                curr_power = allocation['p_list'][index]
+                curr_power = allocation['p_list'][curr_index]
                 if excess_load >= curr_pmax:
-                    power = 0
+                    new_power = 0
                 elif curr_power - excess_load >= curr_pmin:
-                    power = curr_power - excess_load
+                    new_power = curr_power - excess_load
                 else:  # required power lower than the current powerplant's pmin
-                    power = 0
+                    new_power = 0
                     if curr_pmin != 0:
-                        # add a different scenario to the queue
-                        new_allocation = _reallocate(allocation=allocation, new_power=curr_pmin, new_index=index - 1)
+                        # add a different scenario to the queue: allocate pmin and try to decrease
+                        # the power of the previous index
+                        new_allocation = _reallocate(allocation=allocation, new_power=curr_pmin, new_index=curr_index - 1)
                         queue.append(new_allocation)
-                new_allocation = _reallocate(allocation=allocation, new_power=power, new_index=index - 1)
+                new_allocation = _reallocate(allocation=allocation, new_power=new_power, new_index=curr_index - 1)
                 queue.append(new_allocation)
 
         results = []
