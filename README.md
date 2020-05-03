@@ -1,9 +1,11 @@
 # A proposal for the powerplant-coding-challenge
 
-A proposal to the challenge offered by the SPaaS team of ENGIE/GEM.
+A proposal to the challenge offered by the SPaaS team of ENGIE/GEM: a REST API exposing a POST method that takes a payload as you can find in the `resource/example_payloads` directory
+and that returns a json with the same structure as in `resource/example_response.json`.
 
 The REST API has been developed in Python using Flask framework, and a Dockerfile has been added for the extra
-challenge.
+challenge. Power is allocated using a queuing system in order to have a cost efficient repartition of power across the
+available powerplants.
 
 A few notes concerning the challenge:
 
