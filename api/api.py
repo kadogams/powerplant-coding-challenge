@@ -1,3 +1,12 @@
+"""A REST API exposing a POST method that takes a payload as you can find in the `resource/example_payloads` directory
+and that returns a json with the same structure as in `resource/example_response.json`.
+
+Power will be allocated using a queuing system in order to have a cost efficient repartition of power across the
+available powerplants.
+
+For more information about the challenge please refer to the challenge resource.
+"""
+
 from api import app
 from api.power_allocator import PowerAllocator
 
@@ -24,16 +33,15 @@ class PowerplantCodingChallenge(Resource):
 
     For more information please refer to: https://flask-restful.readthedocs.io/en/latest/index.html
     """
-
-    def get(self):
-        """Definition of the HTTP GET method. The function will return the appropriate response according to the request
-        and its payload.
+    def post(self):
+        """Definition of the HTTP POST method. The function will return the appropriate response according to the
+        request and its payload.
         """
         try:
             data = request.get_json()
             if not data:
                 app.logger.info('Missing payload.')
-                return {'message': 'Welcome to the Powerplant coding challenge. Please make a GET request with the '
+                return {'message': 'Welcome to the Powerplant coding challenge. Please make a POST request with the '
                                    'required payload.'}, 400
             app.logger.info('Parsing the payload.')
             allocator = PowerAllocator(data)
