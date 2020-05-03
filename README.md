@@ -13,6 +13,8 @@ responses (assuming that the pmin and pmax values in the payload are whole numbe
 - if run with your local interpreter, the log outputs will be sent to stderr, and if run with Docker the logs will be
 saved at `/var/log/uwsgi` in the container.
 
+For more information about the challenge please refer to the challenge resource.
+
 ## Requirements
 
 - Docker
@@ -66,10 +68,10 @@ FLASK_APP=run.py FLASK_ENV=development flask run
 
 Once the installation complete, the API should be exposed at <http://localhost:5000/> and <http://localhost:5000/api/v0/>.
 
-You may run the following cURL command to make a HTTP GET request with one of the payload examples provided:
+You may run the following cURL command to make a HTTP POST request with one of the payload examples provided:
 
 ```bash
-curl -X GET http://127.0.0.1:5000/api/v0\
+curl -X POST http://127.0.0.1:5000/api/v0\
     --data "@resource/example_payloads/payload1.json"\
     --header "Content-Type: application/json"
 ```
