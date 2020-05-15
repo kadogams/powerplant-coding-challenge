@@ -87,6 +87,4 @@ For more information about the required payload please refer to the challenge re
 
 ## Author
 
-Shoei Kadogami, consultant at Intys Data  
-telephone: +32 487 59 42 58  
-email: shoei.kadogami@intys.eu
+[Shoei Kadogami](www.linkedin.com/in/kadogams)
