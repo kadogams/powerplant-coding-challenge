@@ -1,6 +1,9 @@
 # A proposal for ENGIE's powerplant-coding-challenge
 
-A proposal to the challenge offered by the SPaaS team of ENGIE/GEM: a REST API exposing a POST method that takes a payload as you can find in the `resource/example_payloads` directory
+[UPDATE] Note that the challenge content has been updated since the moment this project has been submitted.
+
+A proposal to [the challenge offered by the SPaaS team of ENGIE/GEM](https://github.com/gem-spaas/powerplant-coding-challenge):
+a REST API exposing a POST method that takes a payload as you can find in the `resource/example_payloads` directory
 and that returns a json with the same structure as in `resource/example_response.json`.
 
 The REST API has been developed in Python using Flask framework, and a Dockerfile has been added for the extra
