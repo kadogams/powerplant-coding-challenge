@@ -87,4 +87,4 @@ For more information about the required payload please refer to the challenge re
 
 ## Author
 
-[Shoei Kadogami](www.linkedin.com/in/kadogams)
+[Shoei Kadogami](https://www.linkedin.com/in/kadogams)
