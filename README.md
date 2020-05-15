@@ -1,6 +1,6 @@
 # A proposal for ENGIE's powerplant-coding-challenge
 
-[UPDATE] Note that the challenge content has been updated since the moment this project has been submitted.
+[UPDATE] Please note that the challenge content has been updated since the moment this project has been submitted.
 
 A proposal to [the challenge offered by the SPaaS team of ENGIE/GEM](https://github.com/gem-spaas/powerplant-coding-challenge):
 a REST API exposing a POST method that takes a payload as you can find in the `resource/example_payloads` directory
