@@ -46,6 +46,7 @@ class PowerAllocator:
         if self.errors or self.missing_params:
             error = 'An error occurred during the parsing of the payload, the resources cannot be allocated.'
             app.logger.error(error)
+            return []
 
         # get the cost to generate 1MWh of electricity for each powerplant
         self._get_real_costs()
