@@ -1,4 +1,4 @@
-# A proposal for the powerplant-coding-challenge
+# A proposal for ENGIE's powerplant-coding-challenge
 
 A proposal to the challenge offered by the SPaaS team of ENGIE/GEM: a REST API exposing a POST method that takes a payload as you can find in the `resource/example_payloads` directory
 and that returns a json with the same structure as in `resource/example_response.json`.
